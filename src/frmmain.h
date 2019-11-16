@@ -13,11 +13,13 @@
 #include <QList>
 #include <QTime>
 #include <QMenu>
+#include <QDrag>
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include <QProgressDialog>
 #include <QScriptEngine>
 #include <QGroupBox>
+#include <QTranslator>
 #include <exception>
 
 #include "parser/gcodeviewparse.h"
