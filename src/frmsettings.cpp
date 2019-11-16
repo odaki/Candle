@@ -8,6 +8,55 @@
 #include <QDebug>
 #include <QScrollBar>
 #include <QColorDialog>
+#include <QStyledItemDelegate>
+#include <QKeySequenceEdit>
+#include <QKeyEvent>
+
+class CustomKeySequenceEdit : public QKeySequenceEdit
+{
+public:
+    explicit CustomKeySequenceEdit(QWidget *parent = 0): QKeySequenceEdit(parent) {}
+    ~CustomKeySequenceEdit() {}
+
+protected:
+    void keyPressEvent(QKeyEvent *pEvent) {
+        QKeySequenceEdit::keyPressEvent(pEvent);
+        QString s = keySequence().toString().split(", ").first();
+
+        QString shiftedKeys = "~!@#$%^&*()_+{}|:?><\"";
+        QString key = s.right(1);
+        
+        if (pEvent->modifiers() & Qt::KeypadModifier) s = "Num+" + s;
+        else if (!key.isEmpty() && shiftedKeys.contains(key)) {
+            s.remove("Shift+");
+            s = s.left(s.size() - 1) + QString("Shift+%1").arg(key);
+        }
+
+        QKeySequence seq(QKeySequence::fromString(s));
+        setKeySequence(seq);
+    }
+};
+
+class ShortcutDelegate: public QStyledItemDelegate
+{
+public:
+    ShortcutDelegate() {}
+
+    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override
+    {
+        return new CustomKeySequenceEdit(parent);
+    }
+
+    void setEditorData(QWidget *editor, const QModelIndex &index) const override
+    {
+        static_cast<QKeySequenceEdit*>(editor)->setKeySequence(index.data(Qt::DisplayRole).toString());
+    }
+
+    void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const override
+    {
+        model->setData(index, static_cast<QKeySequenceEdit*>(editor)->keySequence().toString());
+    }
+};
 
 frmSettings::frmSettings(QWidget *parent) :
     QDialog(parent),
@@ -29,6 +78,11 @@ frmSettings::frmSettings(QWidget *parent) :
     ui->listCategories->item(0)->setSelected(true);
     connect(ui->scrollSettings->verticalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(onScrollBarValueChanged(int)));
 
+    // Shortcuts table
+    ui->tblShortcuts->setItemDelegateForColumn(2, new ShortcutDelegate);
+    ui->tblShortcuts->setTabKeyNavigation(false);
+    ui->tblShortcuts->setEditTriggers(QAbstractItemView::AllEditTriggers);
+
     searchPorts();
 }
 
@@ -44,49 +98,123 @@ int frmSettings::exec()
     m_storedChecks.clear();
     m_storedCombos.clear();
     m_storedColors.clear();
+    m_storedTextBoxes.clear();
+    m_storedPlainTexts.clear();
 
-    foreach (QAbstractSpinBox* sb, this->findChildren<QAbstractSpinBox*>())
-    {
-        m_storedValues.append(sb->property("value").toDouble());
-    }
+    foreach (QAbstractSpinBox* o, this->findChildren<QAbstractSpinBox*>())
+        m_storedValues.append(o->property("value").toDouble());
 
-    foreach (QAbstractButton* cb, this->findChildren<QAbstractButton*>())
-    {
-        m_storedChecks.append(cb->isChecked());
-    }
+    foreach (QAbstractButton* o, this->findChildren<QAbstractButton*>())
+        m_storedChecks.append(o->isChecked());
 
-    foreach (QComboBox* cb, this->findChildren<QComboBox*>())
-    {
-        m_storedCombos.append(cb->currentText());
-    }
+    foreach (QComboBox* o, this->findChildren<QComboBox*>())
+        m_storedCombos.append(o->currentText());
 
-    foreach (ColorPicker* pick, this->findChildren<ColorPicker*>())
-    {
-        m_storedColors.append(pick->color());
-    }
+    foreach (ColorPicker* o, this->findChildren<ColorPicker*>())
+        m_storedColors.append(o->color());
+
+    foreach (QLineEdit* o, this->findChildren<QLineEdit*>())
+        m_storedTextBoxes.append(o->text());
+
+    foreach (QPlainTextEdit* o, this->findChildren<QPlainTextEdit*>())
+        m_storedPlainTexts.append(o->toPlainText());
 
     return QDialog::exec();
 }
 
 void frmSettings::undo()
 {
-    foreach (QAbstractSpinBox* sb, this->findChildren<QAbstractSpinBox*>())
-    {
-        sb->setProperty("value", m_storedValues.takeFirst());
+    foreach (QAbstractSpinBox* o, this->findChildren<QAbstractSpinBox*>())
+        o->setProperty("value", m_storedValues.takeFirst());
+
+    foreach (QAbstractButton* o, this->findChildren<QAbstractButton*>())
+        o->setChecked(m_storedChecks.takeFirst());
+
+    foreach (QComboBox* o, this->findChildren<QComboBox*>())
+        o->setCurrentText(m_storedCombos.takeFirst());
+
+    foreach (ColorPicker* o, this->findChildren<ColorPicker*>())
+        o->setColor(m_storedColors.takeFirst());
+
+    foreach (QLineEdit* o, this->findChildren<QLineEdit*>())
+        o->setText(m_storedTextBoxes.takeFirst());
+
+    foreach (QPlainTextEdit* o, this->findChildren<QPlainTextEdit*>())
+        o->setPlainText(m_storedPlainTexts.takeFirst());
+}
+
+void frmSettings::addCustomSettings(GroupBox *box)
+{
+    static_cast<QVBoxLayout*>(ui->scrollAreaWidgetContents->layout())->addWidget(box);
+    
+    ui->listCategories->addItem(box->title());
+    ui->listCategories->item(ui->listCategories->count() - 1)->setData(Qt::UserRole, box->objectName());
+
+    m_customSettings.append(box);
+}
+
+void frmSettings::saveCustomSettings(QSettings &set)
+{
+    set.beginGroup("Plugins");
+
+    foreach (QWidget *w, m_customSettings) {
+
+        set.beginGroup(w->objectName());
+
+        foreach (QAbstractSpinBox* o, w->findChildren<QAbstractSpinBox*>())
+            set.setValue(o->objectName(), o->property("value").toDouble());
+
+        foreach (QAbstractButton* o, w->findChildren<QAbstractButton*>())
+            set.setValue(o->objectName(), o->isChecked());
+
+        foreach (QComboBox* o, w->findChildren<QComboBox*>())
+            set.setValue(o->objectName(), o->currentText());
+
+        foreach (ColorPicker* o, w->findChildren<ColorPicker*>())
+            set.setValue(o->objectName(), o->color());
+
+        foreach (QLineEdit* o, w->findChildren<QLineEdit*>())
+            set.setValue(o->objectName(), o->text());
+
+        foreach (QPlainTextEdit* o, w->findChildren<QPlainTextEdit*>())
+            set.setValue(o->objectName(), o->toPlainText());
+
+        set.endGroup(); 
     }
 
-    foreach (QAbstractButton* cb, this->findChildren<QAbstractButton*>())
-    {
-        cb->setChecked(m_storedChecks.takeFirst());
+    set.endGroup();
+}
+
+void frmSettings::loadCustomSettings(QSettings &set)
+{
+    set.beginGroup("Plugins");
+
+    foreach (QWidget *w, m_customSettings) {
+
+        set.beginGroup(w->objectName());
+
+        foreach (QAbstractSpinBox* o, w->findChildren<QAbstractSpinBox*>())
+            o->setProperty("value", set.value(o->objectName()).toDouble());
+
+        foreach (QAbstractButton* o, w->findChildren<QAbstractButton*>())
+            o->setChecked(set.value(o->objectName()).toBool());
+
+        foreach (QComboBox* o, w->findChildren<QComboBox*>())
+            o->setCurrentText(set.value(o->objectName()).toString());
+
+        foreach (ColorPicker* o, w->findChildren<ColorPicker*>())
+            o->setColor(set.value(o->objectName()).value<QColor>());
+
+        foreach (QLineEdit* o, w->findChildren<QLineEdit*>())
+            o->setText(set.value(o->objectName()).toString());
+
+        foreach (QPlainTextEdit* o, w->findChildren<QPlainTextEdit*>())
+            o->setPlainText(set.value(o->objectName()).toString());
+
+        set.endGroup(); 
     }
-    foreach (QComboBox* cb, this->findChildren<QComboBox*>())
-    {
-        cb->setCurrentText(m_storedCombos.takeFirst());
-    }
-    foreach (ColorPicker* pick, this->findChildren<ColorPicker*>())
-    {
-        pick->setColor(m_storedColors.takeFirst());
-    }
+
+    set.endGroup();
 }
 
 void frmSettings::on_listCategories_currentRowChanged(int currentRow)
@@ -312,12 +440,12 @@ void frmSettings::setLaserPowerMax(int value)
 
 int frmSettings::rapidSpeed()
 {
-    return ui->txtRapidSpeed->value();
+    return m_rapidSpeed;
 }
 
 void frmSettings::setRapidSpeed(int rapidSpeed)
 {
-    ui->txtRapidSpeed->setValue(rapidSpeed);
+    m_rapidSpeed = rapidSpeed;
 }
 
 int frmSettings::heightmapProbingFeed()
@@ -332,12 +460,12 @@ void frmSettings::setHeightmapProbingFeed(int heightmapProbingFeed)
 
 int frmSettings::acceleration()
 {
-    return ui->txtAcceleration->value();
+    return m_acceleration;
 }
 
 void frmSettings::setAcceleration(int acceleration)
 {
-    ui->txtAcceleration->setValue(acceleration);
+    m_acceleration = acceleration;
 }
 
 int frmSettings::queryStateTime()
@@ -412,12 +540,12 @@ void frmSettings::setAutoCompletion(bool autoCompletion)
 
 int frmSettings::units()
 {
-    return ui->cboUnits->currentIndex();
+    return m_units;
 }
 
 void frmSettings::setUnits(int units)
 {
-    ui->cboUnits->setCurrentIndex(units);
+    m_units = units;
 }
 
 QString frmSettings::touchCommand()
@@ -448,56 +576,6 @@ double frmSettings::simplifyPrecision()
 void frmSettings::setSimplifyPrecision(double simplifyPrecision)
 {
     ui->txtSimplifyPrecision->setValue(simplifyPrecision);
-}
-
-bool frmSettings::panelUserCommands()
-{
-    return ui->chkPanelUserCommands->isChecked();
-}
-
-void frmSettings::setPanelUserCommands(bool value)
-{
-    ui->chkPanelUserCommands->setChecked(value);
-}
-
-bool frmSettings::panelHeightmap()
-{
-    return ui->chkPanelHeightmap->isChecked();
-}
-
-void frmSettings::setPanelHeightmap(bool panelHeightmap)
-{
-    ui->chkPanelHeightmap->setChecked(panelHeightmap);
-}
-
-bool frmSettings::panelSpindle()
-{
-    return ui->chkPanelSpindle->isChecked();
-}
-
-void frmSettings::setPanelSpindle(bool panelSpindle)
-{
-    ui->chkPanelSpindle->setChecked(panelSpindle);
-}
-
-bool frmSettings::panelOverriding()
-{
-    return ui->chkPanelOverriding->isChecked();
-}
-
-void frmSettings::setPanelOverriding(bool panelFeed)
-{
-    ui->chkPanelOverriding->setChecked(panelFeed);
-}
-
-bool frmSettings::panelJog()
-{
-    return ui->chkPanelJog->isChecked();
-}
-
-void frmSettings::setPanelJog(bool panelJog)
-{
-    ui->chkPanelJog->setChecked(panelJog);
 }
 
 QList<ColorPicker *> frmSettings::colors()
@@ -555,12 +633,12 @@ void frmSettings::setDrawModeVectors(bool value)
 
 QString frmSettings::userCommands(int index)
 {
-    return this->findChild<QLineEdit*>(QString("txtUserCommand%1").arg(index))->text();
+    return this->findChild<QPlainTextEdit*>(QString("txtUserCommand%1").arg(index))->toPlainText();
 }
 
 void frmSettings::setUserCommands(int index, QString commands)
 {
-    this->findChild<QLineEdit*>(QString("txtUserCommand%1").arg(index))->setText(commands);
+    this->findChild<QPlainTextEdit*>(QString("txtUserCommand%1").arg(index))->setPlainText(commands);
 }
 
 bool frmSettings::ignoreErrors()
@@ -587,7 +665,7 @@ void frmSettings::showEvent(QShowEvent *se)
 {
     Q_UNUSED(se)
 
-    ui->scrollSettings->updateMinimumWidth();
+    // ui->scrollSettings->updateMinimumWidth();
 }
 
 void frmSettings::searchPorts()
@@ -668,11 +746,6 @@ void frmSettings::on_cmdDefaults_clicked()
     setShowProgramCommands(false);
     setAutoCompletion(true);
 
-    setPanelOverriding(true);
-    setPanelHeightmap(true);
-    setPanelJog(true);
-    setPanelSpindle(true);   
-
     ui->clpTool->setColor(QColor(255, 153, 0));
 
     ui->clpVisualizerBackground->setColor(QColor(255, 255, 255));
@@ -686,6 +759,35 @@ void frmSettings::on_cmdDefaults_clicked()
     ui->clpToolpathEnd->setColor(QColor(0, 255, 0));
 
     setFontSize(9);
+
+    // Shortcuts
+    QMap<QString, QString> d;
+    d["actFileNew"] = "Ctrl+N";
+    d["actFileOpen"] = "Ctrl+O";
+    d["actFileSave"] = "Ctrl+S";
+    d["actFileSaveAs"] = "Ctrl+Shift+S";
+    d["actJogXPlus"] = "Num+6";
+    d["actJogXMinus"] = "Num+4";
+    d["actJogYPlus"] = "Num+8";
+    d["actJogYMinus"] = "Num+2";
+    d["actJogZPlus"] = "Num+9";
+    d["actJogZMinus"] = "Num+3";
+    d["actJogStop"] = "Num+5";
+    d["actJogStepNext"] = "Num+1";
+    d["actJogStepPrevious"] = "Num+7";
+    d["actJogFeedNext"] = "Num++";
+    d["actJogFeedPrevious"] = "Num+-";
+    d["actJogKeyboardControl"] = "ScrollLock";
+    d["actSpindleOnOff"] = "Num+0";
+    d["actSpindleSpeedPlus"] = "Num+*";
+    d["actSpindleSpeedMinus"] = "Num+/";
+    
+    QTableWidget *table = ui->tblShortcuts;
+
+    for (int i = 0; i < table->rowCount(); i++) {
+        QString s = table->item(i, 0)->data(Qt::DisplayRole).toString();
+        table->item(i, 2)->setData(Qt::DisplayRole, d.keys().contains(s) ? d[s] : "");
+    }
 }
 
 void frmSettings::on_cboFontSize_currentTextChanged(const QString &arg1)

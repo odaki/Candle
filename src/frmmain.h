@@ -16,6 +16,8 @@
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include <QProgressDialog>
+#include <QScriptEngine>
+#include <QGroupBox>
 #include <exception>
 
 #include "parser/gcodeviewparse.h"
@@ -40,6 +42,8 @@
 #include "frmsettings.h"
 #include "frmabout.h"
 
+#include "scriptvars.h"
+
 #ifdef WINDOWS
     #include <QtWinExtras/QtWinExtras>
     #include "shobjidl.h"
@@ -47,6 +51,7 @@
 
 namespace Ui {
 class frmMain;
+class frmProgram;
 }
 
 struct CommandAttributes {
@@ -60,6 +65,7 @@ struct CommandQueue {
     QString command;
     int tableIndex;
     bool showInConsole;
+    bool queue;
 };
 
 class CancelException : public std::exception {
@@ -69,7 +75,7 @@ public:
 #define _GLIBCXX_USE_NOEXCEPT _NOEXCEPT
 #endif
 
-    const char* what() const noexcept override
+    const char* what() const override
     {
         return "Operation was cancelled by user";
     }
@@ -83,7 +89,17 @@ public:
     explicit frmMain(QWidget *parent = 0);
     ~frmMain();
 
+    Q_INVOKABLE void sendCommand(QString command, int tableIndex = -1, bool showInConsole = true, bool queue = false);
+    Q_INVOKABLE void applySettings();    
+
     double toolZPosition();
+
+signals:
+
+    void responseReceived(QString command, int tableIndex, QString response);
+    void settingsLoaded();
+    void settingsAboutToSave();
+    void settingsChanged();
 
 private slots:
     void updateHeightMapInterpolationDrawer(bool reset = false);
@@ -101,11 +117,13 @@ private slots:
     void onActRecentFileTriggered();
     void onCboCommandReturnPressed();
     void onTableCurrentChanged(QModelIndex idx1, QModelIndex idx2);
-    void onConsoleResized(QSize size);
-    void onPanelsSizeChanged(QSize size);
     void onCmdUserClicked(bool checked);
     void onOverridingToggled(bool checked);
+    void onOverrideChanged();
     void onActSendFromLineTriggered();
+    void onSlbSpindleValueUserChanged();
+    void onSlbSpindleValueChanged();
+    void onDockTopLevelChanged(bool topLevel);
 
     void on_actFileExit_triggered();
     void on_cmdFileOpen_clicked();
@@ -143,7 +161,6 @@ private slots:
     void on_grpUserCommands_toggled(bool checked);
     void on_chkKeyboardControl_toggled(bool checked);
     void on_tblProgram_customContextMenuRequested(const QPoint &pos);
-    void on_splitter_splitterMoved(int pos, int index);
     void on_actRecentClear_triggered();
     void on_grpHeightMap_toggled(bool arg1);
     void on_chkHeightMapBorderShow_toggled(bool checked);
@@ -166,32 +183,39 @@ private slots:
     void on_cmdHeightMapBorderAuto_clicked();
     void on_cmdFileAbort_clicked();
     void on_cmdSpindle_clicked(bool checked);   
+    void on_mnuViewWindows_aboutToShow();
+    void on_mnuViewPanels_aboutToShow();
 
     void on_cmdYPlus_pressed();
-
     void on_cmdYPlus_released();
-
     void on_cmdYMinus_pressed();
-
     void on_cmdYMinus_released();
-
     void on_cmdXPlus_pressed();
-
     void on_cmdXPlus_released();
-
     void on_cmdXMinus_pressed();
-
     void on_cmdXMinus_released();
-
     void on_cmdZPlus_pressed();
-
     void on_cmdZPlus_released();
-
     void on_cmdZMinus_pressed();
-
     void on_cmdZMinus_released();
-
     void on_cmdStop_clicked();
+
+    void on_actJogStepNext_triggered();
+    void on_actJogStepPrevious_triggered();
+    void on_actJogFeedNext_triggered();
+    void on_actJogFeedPrevious_triggered();
+    void on_actSpindleSpeedPlus_triggered();
+    void on_actSpindleSpeedMinus_triggered();
+    void on_actOverrideFeedPlus_triggered();
+    void on_actOverrideFeedMinus_triggered();
+    void on_actOverrideRapidPlus_triggered();
+    void on_actOverrideRapidMinus_triggered();
+    void on_actOverrideSpindlePlus_triggered();
+    void on_actOverrideSpindleMinus_triggered();
+
+    void on_dockVisualizer_visibilityChanged(bool visible);
+
+    void on_actViewLockWindows_toggled(bool checked);
 
 protected:
     void showEvent(QShowEvent *se);
@@ -201,11 +225,14 @@ protected:
     void closeEvent(QCloseEvent *ce);
     void dragEnterEvent(QDragEnterEvent *dee);
     void dropEvent(QDropEvent *de);
+    void mousePressEvent(QMouseEvent *e);
+    QMenu *createPopupMenu() override;
 
 private:
-    const int BUFFERLENGTH = 127;
+    static const int BUFFERLENGTH = 127;
 
     Ui::frmMain *ui;
+
     GcodeViewParse m_viewParser;
     GcodeViewParse m_probeParser;
 
@@ -241,8 +268,8 @@ private:
     QString m_heightMapFileName;
     QString m_lastFolder;
 
-    bool m_fileChanged = false;
-    bool m_heightMapChanged = false;
+    bool m_fileChanged;
+    bool m_heightMapChanged;
 
     QTimer m_timerConnection;
     QTimer m_timerStateQuery;
@@ -266,9 +293,10 @@ private:
     QMessageBox* m_senderErrorBox;
 
     // Stored origin
-    double m_storedX = 0;
-    double m_storedY = 0;
-    double m_storedZ = 0;
+    double m_storedX;
+    double m_storedY;
+    double m_storedZ;
+    QString m_storedCS;
     QString m_storedParserStatus;
 
     // Console window
@@ -277,21 +305,19 @@ private:
     int m_consolePureHeight;
 
     // Flags
-    bool m_settingZeroXY = false;
-    bool m_settingZeroZ = false;
-    bool m_homing = false;
-    bool m_updateSpindleSpeed = false;
-    bool m_updateParserStatus = false;
-    bool m_updateFeed = false;
+    bool m_homing;
+    bool m_updateSpindleSpeed;
+    bool m_updateParserStatus;
+    bool m_updateFeed;
 
-    bool m_reseting = false;
-    bool m_resetCompleted = true;
-    bool m_aborting = false;
-    bool m_statusReceived = false;
+    bool m_reseting;
+    bool m_resetCompleted;
+    bool m_aborting;
+    bool m_statusReceived;
 
-    bool m_processingFile = false;
-    bool m_transferCompleted = false;
-    bool m_fileEndSent = false;
+    bool m_processingFile;
+    bool m_transferCompleted;
+    bool m_fileEndSent;
 
     bool m_heightMapMode;
     bool m_cellChanged;
@@ -307,20 +333,28 @@ private:
     double m_originalFeed;
 
     // Keyboard
-    bool m_keyPressed = false;
-    bool m_jogBlock = false;
+    bool m_keyPressed;
+    bool m_jogBlock;
     bool m_absoluteCoordinates;
     bool m_storedKeyboardControl;
 
     // Spindle
-    bool m_spindleCW = true;
-    bool m_spindleCommandSpeed = false;
+    bool m_spindleCW;
+    bool m_spindleCommandSpeed;
 
     // Jog
     QVector3D m_jogVector;
 
+    // Recent files
     QStringList m_recentFiles;
     QStringList m_recentHeightmaps;
+
+    // Script
+    QScriptEngine m_scriptEngine;
+    ScriptVars m_storedVars;
+
+    // Drag & drop
+    QPoint m_mousePressPos;
 
     void loadFile(QString fileName);
     void loadFile(QList<QString> data);
@@ -331,11 +365,10 @@ private:
     bool saveChanges(bool heightMapMode);
     void updateControlsState();
     void openPort();
-    void sendCommand(QString command, int tableIndex = -1, bool showInConsole = true);
+    QString evaluateCommand(QString command);
     void grblReset();
     int bufferLength();
     void sendNextFileCommands();
-    void applySettings();
     void updateParser();
     bool dataIsFloating(QString data);
     bool dataIsEnd(QString data);
@@ -343,11 +376,9 @@ private:
 
     QTime updateProgramEstimatedTime(QList<LineSegment *> lines);
     bool saveProgramToFile(QString fileName, GCodeTableModel *model);
-    QString feedOverride(QString command);
 
     bool eventFilter(QObject *obj, QEvent *event);
     bool keyIsMovement(int key);
-    void resizeCheckBoxes();
     void updateLayouts();
     void updateRecentFilesMenu();
     void addRecentFile(QString fileName);
@@ -370,13 +401,21 @@ private:
     void restoreParserState();
     void storeOffsets();
     void restoreOffsets();
+    void storeOffsetsVars(QString response);
     bool isGCodeFile(QString fileName);
     bool isHeightmapFile(QString fileName);
     bool compareCoordinates(double x, double y, double z);
-    int getConsoleMinHeight();
     void updateOverride(SliderBox *slider, int value, char command);
     void jogStep();
     void updateJogTitle();
+    void setupCoordsTextboxes();
+
+    void loadPlugins();
+
+    static bool actionLessThan(const QAction *a1, const QAction *a2);
+    static bool actionTextLessThan(const QAction *a1, const QAction *a2);
 };
+
+typedef QMap<QString, QList<QKeySequence>> ShortcutsMap;
 
 #endif // FRMMAIN_H

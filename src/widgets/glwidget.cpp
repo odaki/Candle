@@ -21,6 +21,9 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent), m_shaderProgram(0)
 #endif
 
 {
+    m_frames = 0;
+    m_fps = 0;
+
     m_animateView = false;
     m_updatesEnabled = false;
 
@@ -218,6 +221,12 @@ bool GLWidget::updatesEnabled() const
 void GLWidget::setUpdatesEnabled(bool updatesEnabled)
 {
     m_updatesEnabled = updatesEnabled;
+
+    if (updatesEnabled) {
+        m_timerPaint.start(m_vsync ? 0 : 1000 / m_targetFps, Qt::PreciseTimer, this);
+    } else {
+        m_timerPaint.stop();
+    }
 }
 
 bool GLWidget::zBuffer() const
@@ -324,13 +333,11 @@ void GLWidget::setColorBackground(const QColor &colorBackground)
     m_colorBackground = colorBackground;
 }
 
-
 void GLWidget::setFps(int fps)
 {
     if (fps <= 0) return;
     m_targetFps = fps;
-    m_timerPaint.stop();
-    m_timerPaint.start(m_vsync ? 0 : 1000 / fps, Qt::PreciseTimer, this);
+    setUpdatesEnabled(m_updatesEnabled);
 }
 
 QTime GLWidget::estimatedTime() const
@@ -521,7 +528,8 @@ void GLWidget::mousePressEvent(QMouseEvent *event)
 
 void GLWidget::mouseMoveEvent(QMouseEvent *event)
 {
-    if ((event->buttons() & Qt::MiddleButton && !(event->modifiers() & Qt::ShiftModifier)) || event->buttons() & Qt::LeftButton) {
+    if ((event->buttons() & Qt::MiddleButton && !(event->modifiers() & Qt::ShiftModifier)) 
+        || (event->buttons() & Qt::LeftButton && !(event->modifiers() & Qt::ShiftModifier))) {
 
         stopViewAnimation();
 
@@ -535,7 +543,9 @@ void GLWidget::mouseMoveEvent(QMouseEvent *event)
         emit rotationChanged();
     }
 
-    if ((event->buttons() & Qt::MiddleButton && event->modifiers() & Qt::ShiftModifier) || event->buttons() & Qt::RightButton) {
+    if ((event->buttons() & Qt::MiddleButton && event->modifiers() & Qt::ShiftModifier) 
+        || event->buttons() & Qt::RightButton
+        || (event->buttons() & Qt::LeftButton && (event->modifiers() & Qt::ShiftModifier))) {
         m_xPan = m_xLastPan - (event->pos().x() - m_lastPos.x()) * 1 / (double)width();
         m_yPan = m_yLastPan + (event->pos().y() - m_lastPos.y()) * 1 / (double)height();
 
@@ -568,7 +578,7 @@ void GLWidget::timerEvent(QTimerEvent *te)
     if (te->timerId() == m_timerPaint.timerId()) {
         if (m_animateView) viewAnimation();
 #ifndef GLES
-        if (m_updatesEnabled) update();
+        update();
 #endif
     } else {
 #ifdef GLES

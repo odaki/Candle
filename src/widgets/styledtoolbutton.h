@@ -9,9 +9,15 @@
 #include <QPainter>
 #include <QStyle>
 #include <QStyleOptionFrame>
+#include <QToolButton>
 
-class StyledToolButton : public QAbstractButton
+class StyledToolButton : public QToolButton
 {
+    Q_OBJECT
+    Q_PROPERTY(QColor backgroundColor READ backColor WRITE setBackColor)
+    Q_PROPERTY(QColor foregroundColor READ foreColor WRITE setForeColor)
+    Q_PROPERTY(QColor highlightColor READ highlightColor WRITE setHighlightColor)
+    
 public:
     explicit StyledToolButton(QWidget *parent = 0);
 
