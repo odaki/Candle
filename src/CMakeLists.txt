@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.13)
 project(Candle)
 
+set(CANDLE_VERSION "1.2.7b")
+
 # set(CMAKE_VERBOSE_MAKEFILE ON)
 
 # instruct CMake to run moc automatically when needed
@@ -15,7 +17,7 @@ if(APPLE)
     add_compile_definitions(Q_OS_MACOS)
 endif()
 add_compile_definitions(sNan=65536)
-add_compile_definitions(APP_VERSION="1.2.7b")
+add_compile_definitions(APP_VERSION="${CANDLE_VERSION}")
 add_compile_definitions(QT_NO_DEBUG)
 
 find_package(Qt5 COMPONENTS Core Widgets OpenGL SerialPort Script UiTools REQUIRED)
@@ -36,11 +38,28 @@ qt5_add_resources(SHADER_RSC
     )
 
 if(APPLE)
-    #set(MACOSX_BUNDLE_ICON_FILE candle.icns)
     set(Candle_ICON ${PROJECT_SOURCE_DIR}/images/candle.icns)
     set_source_files_properties(${Candle_ICON} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
     add_executable(Candle MACOSX_BUNDLE ${SRC_FILES} ${SHADER_RSC} ${Candle_ICON})
-    set_target_properties(Candle PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${PROJECT_SOURCE_DIR}/Info.plist)
+    set_target_properties(Candle PROPERTIES
+        MACOSX_BUNDLE true
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in"
+        MACOSX_BUNDLE_INFO_STRING "Candle is a GRBL controller application with G-Code visualizer written in Qt."
+        MACOSX_BUNDLE_ICON_FILE "candle"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "com.github.Candle"
+        MACOSX_BUNDLE_LONG_VERSION_STRING "Candle ${CANDLE_VERSION}"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "${CANDLE}"
+        MACOSX_BUNDLE_BUNDLE_NAME "Candle"
+        MACOSX_BUNDLE_BUNDLE_VERSION "1.0"
+        MACOSX_BUNDLE_COPYRIGHT "Copyright 2015-2016 Hayrullin Denis Ravilevich"
+        )
+    # add target "dmg" to build a distribution file. To use the target execute "make dmg".
+    add_custom_target(dmg
+        COMMAND macdeployqt Candle.app
+        COMMAND rm -f ${CMAKE_BINARY_DIR}/Candle.${CANDLE_VERSION}.dmg
+        COMMAND hdiutil create -srcfolder ${CMAKE_BINARY_DIR}/Candle.app -volname Candle.${CANDLE_VERSION} ${CMAKE_BINARY_DIR}/Candle.${CANDLE_VERSION}.dmg
+        DEPENDS ${CMAKE_BINARY_DIR}/Candle.app
+    )
 else()
     add_executable(Candle ${SRC_FILES} ${SHADER_RSC})
 endif()
