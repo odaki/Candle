@@ -72,7 +72,7 @@ struct CommandQueue {
 
 class CancelException : public std::exception {
 public:
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MACOS
 #undef _GLIBCXX_USE_NOEXCEPT
 #define _GLIBCXX_USE_NOEXCEPT _NOEXCEPT
 #endif
