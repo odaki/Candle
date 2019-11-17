@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 project(Candle)
 
-set(CANDLE_VERSION "1.2.7b")
+set(CANDLE_VERSION "1.2.7b.3")
 
 # set(CMAKE_VERBOSE_MAKEFILE ON)
 
@@ -38,9 +38,13 @@ qt5_add_resources(SHADER_RSC
     )
 
 if(APPLE)
-    set(Candle_ICON ${PROJECT_SOURCE_DIR}/images/candle.icns)
-    set_source_files_properties(${Candle_ICON} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
-    add_executable(Candle MACOSX_BUNDLE ${SRC_FILES} ${SHADER_RSC} ${Candle_ICON})
+    set(CANDLE_ICON ${PROJECT_SOURCE_DIR}/images/candle.icns)
+    set_source_files_properties(${CANDLE_ICON} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+    set(CANDLE_LICENSE ${PROJECT_SOURCE_DIR}/../LICENSE)
+    set_source_files_properties(${CANDLE_LICENSE} PROPERTIES MACOSX_PACKAGE_LOCATION "MacOS")
+    set(CANDLE_INI ${PROJECT_SOURCE_DIR}/settings.ini)
+    set_source_files_properties(${CANDLE_INI} PROPERTIES MACOSX_PACKAGE_LOCATION "MacOS")
+    add_executable(Candle MACOSX_BUNDLE ${SRC_FILES} ${SHADER_RSC} ${CANDLE_ICON} ${CANDLE_LICENSE} ${CANDLE_INI})
     set_target_properties(Candle PROPERTIES
         MACOSX_BUNDLE true
         MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in"
@@ -55,6 +59,7 @@ if(APPLE)
         )
     # add target "dmg" to build a distribution file. To use the target execute "make dmg".
     add_custom_target(dmg
+        COMMAND make
         COMMAND macdeployqt Candle.app
         COMMAND rm -f ${CMAKE_BINARY_DIR}/Candle.${CANDLE_VERSION}.dmg
         COMMAND hdiutil create -srcfolder ${CMAKE_BINARY_DIR}/Candle.app -volname Candle.${CANDLE_VERSION} ${CMAKE_BINARY_DIR}/Candle.${CANDLE_VERSION}.dmg
