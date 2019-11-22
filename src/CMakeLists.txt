@@ -1,80 +1,14 @@
 cmake_minimum_required(VERSION 3.13)
-project(Candle)
+project(CandleProject)
 
-set(CANDLE_VERSION "1.2.7b.3")
-
-# set(CMAKE_VERBOSE_MAKEFILE ON)
-
-# instruct CMake to run moc automatically when needed
-set(CMAKE_AUTOMOC ON)
-
-# create code from a list of Qt designer ui files
-set(CMAKE_AUTOUIC ON)
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -W -msse3")
+add_subdirectory(candle)
+#add_subdirectory(candleplugins)
+#add_subdirectory(designerplugins)
 
 if(APPLE)
-    add_compile_definitions(Q_OS_MACOS)
+    # add target "dmg" to build a distribution file. To use the target execute "make appdmg".
+    add_custom_target(appdmg
+        COMMAND cd candle
+        COMMAND make dmg
+    )
 endif()
-add_compile_definitions(sNan=65536)
-add_compile_definitions(APP_VERSION="${CANDLE_VERSION}")
-add_compile_definitions(QT_NO_DEBUG)
-
-find_package(Qt5 COMPONENTS Core Widgets OpenGL SerialPort Script UiTools REQUIRED)
-
-include_directories(${PROJECT_SOURCE_DIR})
-
-file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/*.cpp
-                    ${PROJECT_SOURCE_DIR}/drawers/*.cpp
-                    ${PROJECT_SOURCE_DIR}/parser/*.cpp
-                    ${PROJECT_SOURCE_DIR}/widgets/*.cpp
-                    ${PROJECT_SOURCE_DIR}/tables/*.cpp
-                    )
-
-qt5_add_resources(SHADER_RSC 
-    ${PROJECT_SOURCE_DIR}/shaders.qrc
-    ${PROJECT_SOURCE_DIR}/images.qrc
-    ${PROJECT_SOURCE_DIR}/fonts.qrc
-    )
-
-if(APPLE)
-    set(CANDLE_ICON ${PROJECT_SOURCE_DIR}/images/candle.icns)
-    set_source_files_properties(${CANDLE_ICON} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
-    set(CANDLE_LICENSE ${PROJECT_SOURCE_DIR}/../LICENSE)
-    set_source_files_properties(${CANDLE_LICENSE} PROPERTIES MACOSX_PACKAGE_LOCATION "MacOS")
-    set(CANDLE_INI ${PROJECT_SOURCE_DIR}/settings.ini)
-    set_source_files_properties(${CANDLE_INI} PROPERTIES MACOSX_PACKAGE_LOCATION "MacOS")
-    add_executable(Candle MACOSX_BUNDLE ${SRC_FILES} ${SHADER_RSC} ${CANDLE_ICON} ${CANDLE_LICENSE} ${CANDLE_INI})
-    set_target_properties(Candle PROPERTIES
-        MACOSX_BUNDLE true
-        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in"
-        MACOSX_BUNDLE_INFO_STRING "Candle is a GRBL controller application with G-Code visualizer written in Qt."
-        MACOSX_BUNDLE_ICON_FILE "candle"
-        MACOSX_BUNDLE_GUI_IDENTIFIER "com.github.Candle"
-        MACOSX_BUNDLE_LONG_VERSION_STRING "Candle ${CANDLE_VERSION}"
-        MACOSX_BUNDLE_SHORT_VERSION_STRING "${CANDLE}"
-        MACOSX_BUNDLE_BUNDLE_NAME "Candle"
-        MACOSX_BUNDLE_BUNDLE_VERSION "1.0"
-        MACOSX_BUNDLE_COPYRIGHT "Copyright 2015-2016 Hayrullin Denis Ravilevich"
-        )
-    # add target "dmg" to build a distribution file. To use the target execute "make dmg".
-    add_custom_target(dmg
-        COMMAND make
-        COMMAND macdeployqt Candle.app
-        COMMAND rm -f ${CMAKE_BINARY_DIR}/Candle.${CANDLE_VERSION}.dmg
-        COMMAND hdiutil create -srcfolder ${CMAKE_BINARY_DIR}/Candle.app -volname Candle.${CANDLE_VERSION} ${CMAKE_BINARY_DIR}/Candle.${CANDLE_VERSION}.dmg
-        DEPENDS ${CMAKE_BINARY_DIR}/Candle.app
-    )
-else()
-    add_executable(Candle ${SRC_FILES} ${SHADER_RSC})
-endif()
-
-target_link_libraries(Candle
-    Qt5::Core
-    Qt5::Widgets
-    Qt5::OpenGL
-    Qt5::Gui
-    Qt5::SerialPort
-    Qt5::Script
-    Qt5::UiTools
-    )
