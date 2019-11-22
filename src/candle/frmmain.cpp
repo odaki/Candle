@@ -181,7 +181,7 @@ frmMain::frmMain(QWidget *parent) :
 
     connect(ui->cboCommand, SIGNAL(returnPressed()), this, SLOT(onCboCommandReturnPressed()));
 
-    foreach (StyledToolButton* button, this->findChildren<StyledToolButton*>(QRegExp("cmdUser\\d"))) {
+    foreach (StyledToolButton* button, this->findChildren<StyledToolButton*>(QRegularExpression("cmdUser\\d"))) {
         connect(button, SIGNAL(clicked(bool)), this, SLOT(onCmdUserClicked(bool)));
     }
 
@@ -268,7 +268,7 @@ frmMain::frmMain(QWidget *parent) :
     updateControlsState();
 
     // Prepare jog buttons
-    foreach (StyledToolButton* button, ui->grpJog->findChildren<StyledToolButton*>(QRegExp("cmdJogFeed\\d")))
+    foreach (StyledToolButton* button, ui->grpJog->findChildren<StyledToolButton*>(QRegularExpression("cmdJogFeed\\d")))
     {
         connect(button, SIGNAL(clicked(bool)), this, SLOT(onCmdJogFeedClicked()));
     }
@@ -491,7 +491,7 @@ void frmMain::loadSettings()
     m_settings->setTouchCommand(set.value("touchCommand").toString());
     m_settings->setSafePositionCommand(set.value("safePositionCommand").toString());
 
-    foreach (StyledToolButton* button, this->findChildren<StyledToolButton*>(QRegExp("cmdUser\\d"))) {
+    foreach (StyledToolButton* button, this->findChildren<StyledToolButton*>(QRegularExpression("cmdUser\\d"))) {
         int i = button->objectName().right(1).toInt();
         m_settings->setUserCommands(i, set.value(QString("userCommands%1").arg(i)).toString());
     }
@@ -686,7 +686,7 @@ void frmMain::saveSettings()
     set.setValue("spindleOverride", ui->slbSpindleOverride->isChecked());
     set.setValue("spindleOverrideValue", ui->slbSpindleOverride->value());
 
-    foreach (StyledToolButton* button, this->findChildren<StyledToolButton*>(QRegExp("cmdUser\\d"))) {
+    foreach (StyledToolButton* button, this->findChildren<StyledToolButton*>(QRegularExpression("cmdUser\\d"))) {
         int i = button->objectName().right(1).toInt();
         set.setValue(QString("userCommands%1").arg(i), m_settings->userCommands(i));
     }
@@ -729,7 +729,7 @@ void frmMain::saveSettings()
     ShortcutsMap m;
     QByteArray ba;
     QDataStream s(&ba, QIODevice::WriteOnly);
-    QList<QAction*> acts = findChildren<QAction*>(QRegExp("act.*"));
+    QList<QAction*> acts = findChildren<QAction*>(QRegularExpression("act.*"));
 
     foreach (QAction *a, acts) m[a->objectName()] = a->shortcuts();
     s << m;
@@ -1759,6 +1759,7 @@ void frmMain::dropEvent(QDropEvent *de)
 
 void frmMain::mousePressEvent(QMouseEvent *e)
 {
+  (void)e;
     // qDebug() << childAt(e->pos());
 }
 
@@ -2147,6 +2148,7 @@ void frmMain::onSlbSpindleValueChanged()
 
 void frmMain::onDockTopLevelChanged(bool topLevel)
 {
+    (void)topLevel;
     static_cast<QWidget*>(sender())->setStyleSheet("");
 }
 
@@ -2361,7 +2363,7 @@ bool frmMain::actionTextLessThan(const QAction *a1, const QAction *a2)
 
 void frmMain::on_actServiceSettings_triggered()
 {
-    QList<QAction*> acts = findChildren<QAction*>(QRegExp("act.*"));
+    QList<QAction*> acts = findChildren<QAction*>(QRegularExpression("act.*"));
     QTableWidget *table = m_settings->ui->tblShortcuts;
 
     table->clear();
@@ -2372,7 +2374,7 @@ void frmMain::on_actServiceSettings_triggered()
     table->verticalHeader()->setDefaultAlignment(Qt::AlignCenter);
     table->verticalHeader()->setFixedWidth(table->verticalHeader()->sizeHint().width() + 11);
 
-    qSort(acts.begin(), acts.end(), frmMain::actionLessThan);
+    std::sort(acts.begin(), acts.end(), frmMain::actionLessThan);
     for (int i = 0; i < acts.count(); i++) {
         table->setItem(i, 0, new QTableWidgetItem(acts.at(i)->objectName()));
         table->setItem(i, 1, new QTableWidgetItem(acts.at(i)->text().remove("&")));
@@ -2445,7 +2447,7 @@ void frmMain::applySettings() {
     ui->slbSpindle->setMinimum(m_settings->spindleSpeedMin());
     ui->slbSpindle->setMaximum(m_settings->spindleSpeedMax());
 
-    ui->cboCommand->setAutoCompletion(m_settings->autoCompletion());
+    //ui->cboCommand->setAutoCompletion(m_settings->autoCompletion());
 
     m_codeDrawer->setSimplify(m_settings->simplify());
     m_codeDrawer->setSimplifyPrecision(m_settings->simplifyPrecision());
@@ -2502,7 +2504,7 @@ void frmMain::applySettings() {
     ui->cmdClearConsole->setFixedSize(s);
     ui->cmdCommandSend->setFixedSize(s);
 
-    foreach (StyledToolButton* button, this->findChildren<StyledToolButton*>(QRegExp("cmdUser\\d"))) {
+    foreach (StyledToolButton* button, this->findChildren<StyledToolButton*>(QRegularExpression("cmdUser\\d"))) {
         button->setToolTip(m_settings->userCommands(button->objectName().right(1).toInt()));
         button->setEnabled(!button->toolTip().isEmpty());
     }
@@ -3908,6 +3910,7 @@ bool frmMain::compareCoordinates(double x, double y, double z)
 
 void frmMain::onCmdUserClicked(bool checked)
 {
+    (void)checked;
     int i = sender()->objectName().right(1).toInt();
 
     QStringList list = m_settings->userCommands(i).remove("\n").split(QRegExp(";(?![^\\{]+\\})"));
@@ -3919,6 +3922,7 @@ void frmMain::onCmdUserClicked(bool checked)
 
 void frmMain::onOverridingToggled(bool checked)
 {
+    (void)checked;
     ui->grpOverriding->setProperty("overrided", ui->slbFeedOverride->isChecked()
                                    || ui->slbRapidOverride->isChecked() || ui->slbSpindleOverride->isChecked());
     style()->unpolish(ui->grpOverriding);
@@ -4266,7 +4270,7 @@ void frmMain::on_mnuViewWindows_aboutToShow()
         al.append(a);
     }
 
-    qSort(al.begin(), al.end(), frmMain::actionTextLessThan);
+   std::sort(al.begin(), al.end(), frmMain::actionTextLessThan);
 
     ui->mnuViewWindows->clear();
     ui->mnuViewWindows->addActions(al);

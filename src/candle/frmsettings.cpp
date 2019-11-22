@@ -44,6 +44,8 @@ public:
 
     QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override
     {
+        (void)option;
+        (void)index;
         return new CustomKeySequenceEdit(parent);
     }
 

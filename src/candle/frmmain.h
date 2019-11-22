@@ -220,14 +220,14 @@ private slots:
     void on_actViewLockWindows_toggled(bool checked);
 
 protected:
-    void showEvent(QShowEvent *se);
-    void hideEvent(QHideEvent *he);
-    void resizeEvent(QResizeEvent *re);
-    void timerEvent(QTimerEvent *);
-    void closeEvent(QCloseEvent *ce);
-    void dragEnterEvent(QDragEnterEvent *dee);
-    void dropEvent(QDropEvent *de);
-    void mousePressEvent(QMouseEvent *e);
+    void showEvent(QShowEvent *se) override;
+    void hideEvent(QHideEvent *he) override;
+    void resizeEvent(QResizeEvent *re) override;
+    void timerEvent(QTimerEvent *) override;
+    void closeEvent(QCloseEvent *ce) override;
+    void dragEnterEvent(QDragEnterEvent *dee) override;
+    void dropEvent(QDropEvent *de) override;
+    void mousePressEvent(QMouseEvent *e) override;
     QMenu *createPopupMenu() override;
 
 private:
@@ -379,7 +379,7 @@ private:
     QTime updateProgramEstimatedTime(QList<LineSegment *> lines);
     bool saveProgramToFile(QString fileName, GCodeTableModel *model);
 
-    bool eventFilter(QObject *obj, QEvent *event);
+    bool eventFilter(QObject *obj, QEvent *event) override;
     bool keyIsMovement(int key);
     void updateLayouts();
     void updateRecentFilesMenu();
