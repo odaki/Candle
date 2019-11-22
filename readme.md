@@ -24,7 +24,7 @@ Downloads:
 Experimental versions:
 
 * [Version 1.2b release](https://github.com/Denvi/Candle/releases/tag/v1.2b)
-
+* [macOS private build release](https://github.com/odaki/Candle/releases) 
 
 For GRBL v1.1 firmware
 
