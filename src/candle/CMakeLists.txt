@@ -38,37 +38,37 @@ qt5_add_resources(SHADER_RSC
     )
 
 if(APPLE)
-    set(CANDLE_ICON ${PROJECT_SOURCE_DIR}/../images/candle.icns)
+    set(CANDLE_ICON ${PROJECT_SOURCE_DIR}/images/candle.icns)
     set_source_files_properties(${CANDLE_ICON} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
     set(CANDLE_LICENSE ${PROJECT_SOURCE_DIR}/../../LICENSE)
     set_source_files_properties(${CANDLE_LICENSE} PROPERTIES MACOSX_PACKAGE_LOCATION "MacOS")
     set(CANDLE_INI ${PROJECT_SOURCE_DIR}/settings.ini)
     set_source_files_properties(${CANDLE_INI} PROPERTIES MACOSX_PACKAGE_LOCATION "MacOS")
-    add_executable(Candle MACOSX_BUNDLE ${SRC_FILES} ${SHADER_RSC} ${CANDLE_ICON} ${CANDLE_LICENSE} ${CANDLE_INI})
-    set_target_properties(Candle PROPERTIES
+    add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SRC_FILES} ${SHADER_RSC} ${CANDLE_ICON} ${CANDLE_LICENSE} ${CANDLE_INI})
+    set_target_properties(${PROJECT_NAME} PROPERTIES
         MACOSX_BUNDLE true
         MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in"
-        MACOSX_BUNDLE_INFO_STRING "Candle is a GRBL controller application with G-Code visualizer written in Qt."
+        MACOSX_BUNDLE_INFO_STRING "${PROJECT_NAME} is a GRBL controller application with G-Code visualizer written in Qt."
         MACOSX_BUNDLE_ICON_FILE "candle"
-        MACOSX_BUNDLE_GUI_IDENTIFIER "com.github.Candle"
-        MACOSX_BUNDLE_LONG_VERSION_STRING "Candle ${CANDLE_VERSION}"
-        MACOSX_BUNDLE_SHORT_VERSION_STRING "${CANDLE}"
-        MACOSX_BUNDLE_BUNDLE_NAME "Candle"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "com.github.${PROJECT_NAME}"
+        MACOSX_BUNDLE_LONG_VERSION_STRING "${PROJECT_NAME} ${CANDLE_VERSION}"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "${CANDLE_VERSION}"
+        MACOSX_BUNDLE_BUNDLE_NAME "${PROJECT_NAME}"
         MACOSX_BUNDLE_BUNDLE_VERSION "1.0"
         MACOSX_BUNDLE_COPYRIGHT "Copyright 2015-2016 Hayrullin Denis Ravilevich"
         )
     # add target "dmg" to build a distribution file. To use the target execute "make dmg".
     add_custom_target(dmg
-        COMMAND macdeployqt Candle.app
-        COMMAND rm -f Candle.${CANDLE_VERSION}.dmg
-        COMMAND hdiutil create -srcfolder Candle.app -volname Candle.${CANDLE_VERSION} Candle.${CANDLE_VERSION}.dmg
-        DEPENDS Candle
+        COMMAND macdeployqt ${PROJECT_NAME}.app
+        COMMAND rm -f ${PROJECT_NAME}.${CANDLE_VERSION}.dmg
+        COMMAND hdiutil create -srcfolder ${PROJECT_NAME}.app -volname ${PROJECT_NAME}.${CANDLE_VERSION} ${PROJECT_NAME}.${CANDLE_VERSION}.dmg
+        DEPENDS ${PROJECT_NAME}
     )
 else()
-    add_executable(Candle ${SRC_FILES} ${SHADER_RSC})
+    add_executable(${PROJECT_NAME} ${SRC_FILES} ${SHADER_RSC})
 endif()
 
-target_link_libraries(Candle
+target_link_libraries(${PROJECT_NAME}
     Qt5::Core
     Qt5::Widgets
     Qt5::OpenGL
