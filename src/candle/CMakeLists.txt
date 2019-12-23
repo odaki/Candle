@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 project(Candle)
 
-set(CANDLE_VERSION "1.2.8b.1")
+set(CANDLE_VERSION "1.2.8b.2")
 
 # set(CMAKE_VERBOSE_MAKEFILE ON)
 
