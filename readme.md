@@ -12,7 +12,7 @@ Changed from base repository:
 ------------------
 * Based on [Experimental release](https://github.com/Denvi/Candle/tree/Experimental)
 * Adoption of a new version of Qt
-* Change CMakefile to generate DMG package
+* Change CMakeLists.txt to generate DMG package (run "make appdmg")
 
 Build requirements:
 ------------------
