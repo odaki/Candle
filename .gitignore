@@ -46,6 +46,7 @@ Temporary Items
 *.user*
 
 # Build dir
+build
 build-*
 
 # Binaries
