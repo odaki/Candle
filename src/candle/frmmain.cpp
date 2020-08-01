@@ -403,9 +403,9 @@ void frmMain::preloadSettings()
     qApp->setStyleSheet(QString(qApp->styleSheet()).replace(QRegExp("font-size:\\s*\\d+"), "font-size: " + set.value("fontSize", "8").toString()));
 
     // Update v-sync in glformat
-    QGLFormat fmt = QGLFormat::defaultFormat();
+    QSurfaceFormat fmt = QSurfaceFormat::defaultFormat();
     fmt.setSwapInterval(set.value("vsync", false).toBool() ? 1 : 0);
-    QGLFormat::setDefaultFormat(fmt);
+    QSurfaceFormat::setDefaultFormat(fmt);
 }
 
 void frmMain::loadSettings()

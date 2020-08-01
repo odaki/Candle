@@ -2,8 +2,10 @@
 
 #include "shaderdrawable.h"
 
+#if 0
 #ifdef GLES
 #include <GLES/gl.h>
+#endif
 #endif
 
 ShaderDrawable::ShaderDrawable()

@@ -29,8 +29,10 @@ int main(int argc, char *argv[])
 
     QApplication a(argc, argv);
 
+#if 0
 #ifdef GLES
     QFontDatabase::addApplicationFont(":/fonts/Ubuntu-R.ttf");
+#endif
 #endif
 
     QGLFormat glf = QGLFormat::defaultFormat();

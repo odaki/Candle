@@ -8,8 +8,10 @@
 #include <QPainter>
 #include <QEasingCurve>
 
+#if 0
 #ifdef GLES
 #include <GLES/gl.h>
+#endif
 #endif
 
 #define ZOOMSTEP 1.1

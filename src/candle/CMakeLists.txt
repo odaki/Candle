@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 project(Candle)
 
-set(CANDLE_VERSION "1.2.8b.5")
+set(CANDLE_VERSION "1.2.8b.6")
 
 # set(CMAKE_VERBOSE_MAKEFILE ON)
 
@@ -15,6 +15,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -W -msse3 -fvisibility=hidden -fvi
 
 if(APPLE)
     add_compile_definitions(Q_OS_MACOS)
+    add_compile_definitions(GLES)
 endif()
 add_compile_definitions(sNan=65536)
 add_compile_definitions(APP_VERSION="${CANDLE_VERSION}")
