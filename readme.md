@@ -13,16 +13,18 @@ Changed from base repository:
 * Based on [Experimental release](https://github.com/Denvi/Candle/tree/Experimental)
 * Adoption of a new version of Qt
 * Change CMakeLists.txt to generate DMG package (run "make appdmg")
+* Use GLES widget (QOpenGLWidget)
+* Disable plugins
 
 Build requirements:
 ------------------
-Qt 5.15.0 with Xcode commandline compiler (Apple clang version 11.0.3)
+Qt 5.15.1 with Xcode commandline compiler (Apple clang version 11.0.3)
 
 Downloads:
 ----------
 Experimental versions:
 
-* [Version 1.2.8b release](https://github.com/odaki/Candle/releases)
+* [Version 1.2.9.1b release](https://github.com/odaki/Candle/releases)
 
 "Candle" main window:
 ![screenshot](/screenshots/screenshot_macos.png)
