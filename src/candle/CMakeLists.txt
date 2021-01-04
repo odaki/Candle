@@ -1,9 +1,12 @@
 cmake_minimum_required(VERSION 3.13)
 project(Candle)
+set(SIGNER_ID "Michiyasu Odaki")
 
 set(CANDLE_VERSION "1.2.9.1b.1")
+set(CANDLE_ARCH "x86_64")
+#set(CANDLE_ARCH "arm64")
 
-# set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
 # instruct CMake to run moc automatically when needed
 set(CMAKE_AUTOMOC ON)
@@ -11,9 +14,16 @@ set(CMAKE_AUTOMOC ON)
 # create code from a list of Qt designer ui files
 set(CMAKE_AUTOUIC ON)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -W -msse3 -fvisibility=hidden -fvisibility-inlines-hidden")
+if (${CANDLE_ARCH} STREQUAL "arm64")
+    set(CANDLE_ARCH_OPTIONS "")
+elseif (${CANDLE_ARCH} STREQUAL "x86_64")
+    set(CANDLE_ARCH_OPTIONS "-msse3")
+endif()
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -W -arch ${CANDLE_ARCH} ${CANDLE_ARCH_OPTIONS} -fvisibility=hidden -fvisibility-inlines-hidden")
 
 if(APPLE)
+    set(CMAKE_OSX_ARCHITECTURES ${CANDLE_ARCH})
     add_compile_definitions(Q_OS_MACOS)
     add_compile_definitions(GLES)
 endif()
@@ -32,7 +42,7 @@ file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/*.cpp
                     ${PROJECT_SOURCE_DIR}/tables/*.cpp
                     )
 
-qt5_add_resources(SHADER_RSC 
+qt5_add_resources(SHADER_RSC
     ${PROJECT_SOURCE_DIR}/shaders.qrc
     ${PROJECT_SOURCE_DIR}/images.qrc
     ${PROJECT_SOURCE_DIR}/fonts.qrc
@@ -61,8 +71,9 @@ if(APPLE)
     # add target "dmg" to build a distribution file. To use the target execute "make dmg".
     add_custom_target(dmg
         COMMAND macdeployqt ${PROJECT_NAME}.app
+        COMMAND codesign --force --deep-verify --verbose --sign "Apple Development: ${SIGNER_ID}" ${PROJECT_NAME}.app
         COMMAND rm -f ${PROJECT_NAME}.${CANDLE_VERSION}.dmg
-        COMMAND hdiutil create -srcfolder ${PROJECT_NAME}.app -volname ${PROJECT_NAME}.${CANDLE_VERSION} ${PROJECT_NAME}.${CANDLE_VERSION}.dmg
+        COMMAND hdiutil create -srcfolder ${PROJECT_NAME}.app -volname ${PROJECT_NAME}.${CANDLE_VERSION} ${PROJECT_NAME}.${CANDLE_VERSION}_${CANDLE_ARCH}.dmg
         DEPENDS ${PROJECT_NAME}
     )
 else()
