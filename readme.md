@@ -15,6 +15,7 @@ Changed from base repository:
 * Change CMakeLists.txt to generate DMG package (run "make appdmg")
 * Use GLES widget (QOpenGLWidget)
 * Disable plugins
+* Support Apple Silicon
 
 Build requirements:
 ------------------
