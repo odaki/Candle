@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.13)
 project(Candle)
 set(SIGNER_ID "Michiyasu Odaki")
 
-set(CANDLE_VERSION "1.2.9.1b.1")
-set(CANDLE_ARCH "x86_64")
-#set(CANDLE_ARCH "arm64")
+set(CANDLE_VERSION "1.2.9.1b.2")
+#set(CANDLE_ARCH "x86_64")
+set(CANDLE_ARCH "arm64")
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
