@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 project(Candle)
-set(SIGNER_ID "Michiyasu Odaki")
+set(SIGNER_ID "Apple Development:")
 
 set(CANDLE_VERSION "1.2.9.1b.4")
 #set(CANDLE_ARCH "x86_64")
@@ -71,7 +71,7 @@ if(APPLE)
     # add target "dmg" to build a distribution file. To use the target execute "make dmg".
     add_custom_target(dmg
         COMMAND macdeployqt ${PROJECT_NAME}.app
-        COMMAND codesign --force --deep-verify --verbose --sign "Apple Development: ${SIGNER_ID}" ${PROJECT_NAME}.app
+        COMMAND codesign --force --deep-verify --verbose --sign "${SIGNER_ID}" ${PROJECT_NAME}.app
         COMMAND rm -f ${PROJECT_NAME}.${CANDLE_VERSION}.dmg
         COMMAND hdiutil create -srcfolder ${PROJECT_NAME}.app -volname ${PROJECT_NAME}.${CANDLE_VERSION} ${PROJECT_NAME}.${CANDLE_VERSION}_${CANDLE_ARCH}.dmg
         DEPENDS ${PROJECT_NAME}
