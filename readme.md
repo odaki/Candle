@@ -27,5 +27,13 @@ Experimental versions:
 
 * [Version 1.2.9.1b release](https://github.com/odaki/Candle/releases)
 
+Before creating new issue:
+------
+Candle works with CNC controlled by GRBL firmware, many problems can be solved by using proper version of GRBL, using proper configuration.
+
+Please read GRBL wiki: 
+- GRBL v0.9-: https://github.com/grbl/grbl/wiki
+- GRBL v1.1: https://github.com/gnea/grbl/wiki
+
 "Candle" main window:
 ![screenshot](/screenshots/screenshot_macos.png)
