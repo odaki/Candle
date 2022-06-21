@@ -62,13 +62,31 @@ struct CommandAttributes {
     int consoleIndex;
     int tableIndex;
     QString command;
+
+    CommandAttributes() {
+    }
+
+    CommandAttributes(int len, int consoleIdx, int tableIdx, QString cmd) {
+        length = len;
+        consoleIndex = consoleIdx;
+        tableIndex = tableIdx;
+        command = cmd;
+    }
 };
 
 struct CommandQueue {
     QString command;
     int tableIndex;
     bool showInConsole;
-    bool queue;
+
+    CommandQueue() {
+    }
+
+    CommandQueue(QString cmd, int idx, bool show) {
+        command = cmd;
+        tableIndex = idx;
+        showInConsole = show;
+    }
 };
 
 class CancelException : public std::exception {
@@ -92,7 +110,6 @@ public:
     explicit frmMain(QWidget *parent = 0);
     ~frmMain();
 
-    Q_INVOKABLE void sendCommand(QString command, int tableIndex = -1, bool showInConsole = true, bool queue = false);
     Q_INVOKABLE void applySettings();    
 
     double toolZPosition();
@@ -234,6 +251,12 @@ protected:
 private:
     static const int BUFFERLENGTH = 127;
 
+    enum SendCommandResult {
+         SendDone = 0,
+         SendEmpty = 1,
+         SendQueue = 2
+     };
+
     Ui::frmMain *ui;
 
     GcodeViewParse m_viewParser;
@@ -368,6 +391,7 @@ private:
     bool saveChanges(bool heightMapMode);
     void updateControlsState();
     void openPort();
+    SendCommandResult sendCommand(QString command, int tableIndex = -1, bool showInConsole = true, bool wait = false);
     QString evaluateCommand(QString command);
     void grblReset();
     int bufferLength();

@@ -899,25 +899,30 @@ void frmMain::openPort()
     }
 }
 
-void frmMain::sendCommand(QString command, int tableIndex, bool showInConsole, bool queue)
+frmMain::SendCommandResult frmMain::sendCommand(QString command, int tableIndex, bool showInConsole, bool wait)
 {
-    if (!m_serialPort.isOpen() || !m_resetCompleted) return;
+    if (!m_serialPort.isOpen() || !m_resetCompleted) return SendDone;
 
-    // Commands queue
-    if (queue || (bufferLength() + command.length() + 1) > BUFFERLENGTH) {
-        CommandQueue cq;
+    // Check command
+    if (command.isEmpty()) return SendEmpty;
 
-        cq.command = command;
-        cq.tableIndex = tableIndex;
-        cq.showInConsole = showInConsole;
-        cq.queue = queue;
-
-        m_queue.append(cq);
-        return;
+    // Place to queue on 'wait' flag
+    if (wait) {
+        m_queue.append(CommandQueue(command, tableIndex, showInConsole));
+        return SendQueue;
     }
-
+    
     // Evaluate scripts in command
     if (tableIndex < 0) command = evaluateCommand(command);
+
+    // Check evaluated command
+    if (command.isEmpty()) return SendEmpty;
+
+    // Place to queue if command buffer is full
+    if ((bufferLength() + command.length() + 1) > BUFFERLENGTH) {
+        m_queue.append(CommandQueue(command, tableIndex, showInConsole));
+        return SendQueue;
+    }
 
     command = command.toUpper();
 
@@ -956,6 +961,8 @@ void frmMain::sendCommand(QString command, int tableIndex, bool showInConsole, b
     }
 
     m_serialPort.write((command + "\r").toLatin1());
+
+    return SendDone;
 }
 
 void frmMain::grblReset()
@@ -1436,18 +1443,20 @@ void frmMain::onSerialPortReadyRead()
                     emit responseReceived(ca.command, ca.tableIndex, response);
 
                     // Check queue
-                    if (m_queue.length() > 0) {
-                        CommandQueue cq = m_queue.takeFirst();
-                        while (true) {
-                          if ((bufferLength() + cq.command.length() + 1) <= BUFFERLENGTH) {
-                            if (!cq.command.isEmpty()) sendCommand(cq.command, cq.tableIndex, cq.showInConsole);
-                            if (!cq.command.isEmpty() && (m_queue.isEmpty() || cq.queue)) break;
-                                else cq = m_queue.takeFirst();
-                          } else {
-                            m_queue.insert(0, cq);
-                            break;
-                          }
-                        }
+                    static bool processingQueue = false;
+                    if (m_queue.length() > 0 && !processingQueue) {
+                        processingQueue = true;
+                        while (m_queue.length() > 0) {
+                            CommandQueue cq = m_queue.takeFirst();
+                            SendCommandResult r = sendCommand(cq.command, cq.tableIndex, cq.showInConsole);
+                            if (r == SendDone) {
+                                break;
+                            } else if (r == SendQueue) {
+                                m_queue.prepend(m_queue.takeLast());
+                                break;
+                         }
+                       }
+                       processingQueue = false;
                     }
 
                     // Add response to table, send next program commands
@@ -3990,14 +3999,17 @@ void frmMain::jogStep()
 QString frmMain::evaluateCommand(QString command)
 {
     // Evaluate script  
-    QRegExp sx("\\{([^\\}]+)\\}");
+    static QRegularExpression rx("\\{(?:(?>[^\\{\\}])|(?0))*\\}");
+    QRegularExpressionMatch m;
     QScriptValue v;
     QString vs;
-    while (sx.indexIn(command) != -1) {
-        v = m_scriptEngine.evaluate(sx.cap(1));
+
+     while ((m = rx.match(command)).hasMatch()) {
+        v = m_scriptEngine.evaluate(m.captured(0));
         vs = v.isUndefined() ? "" : v.isNumber() ? QString::number(v.toNumber(), 'f', 4) : v.toString();
-        command.replace(sx.cap(0), vs);
+        command.replace(m.captured(0), vs);
     }
+
     return command;
 }
 
