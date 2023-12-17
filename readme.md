@@ -19,7 +19,7 @@ Changed from base repository:
 
 Build requirements:
 ------------------
-Qt 5.15.2 with Xcode commandline compiler (Apple clang version 12.0.0)
+Qt 5.15.x with Xcode commandline compiler (Apple clang version 15.0.0)
 
 Downloads:
 ----------

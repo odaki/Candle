@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 project(Candle)
 set(SIGNER_ID "Apple Development:")
 
-set(CANDLE_VERSION "1.2.9.1b.10")
+set(CANDLE_VERSION "1.2.9.1b.11")
 #set(CANDLE_ARCH "x86_64")
 set(CANDLE_ARCH "arm64")
 
