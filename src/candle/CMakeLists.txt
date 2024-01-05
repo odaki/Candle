@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 project(Candle)
 set(SIGNER_ID "Apple Development:")
 
-set(CANDLE_VERSION "1.2.9.1b.11")
+set(CANDLE_VERSION "1.2.9.1b.12")
 #set(CANDLE_ARCH "x86_64")
 set(CANDLE_ARCH "arm64")
 
@@ -25,7 +25,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -W -arch ${CANDLE_ARCH} ${CANDLE_A
 if(APPLE)
     set(CMAKE_OSX_ARCHITECTURES ${CANDLE_ARCH})
     add_compile_definitions(Q_OS_MACOS)
-    add_compile_definitions(GLES)
+    #add_compile_definitions(GLES)
 endif()
 add_compile_definitions(sNan=65536)
 add_compile_definitions(APP_VERSION="${CANDLE_VERSION}")

@@ -580,7 +580,7 @@ void GLWidget::timerEvent(QTimerEvent *te)
     if (te->timerId() == m_timerPaint.timerId()) {
         if (m_animateView) viewAnimation();
 #ifndef GLES
-        update();
+        if (m_updatesEnabled) update();
 #endif
     } else {
 #ifdef GLES
