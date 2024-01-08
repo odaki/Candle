@@ -25,7 +25,7 @@ Downloads:
 ----------
 Experimental versions:
 
-* [Version 1.2.9.1b release](https://github.com/odaki/Candle/releases)
+* [Version 1.2.9.2b release](https://github.com/odaki/Candle/releases)
 
 Before creating new issue:
 ------
