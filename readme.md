@@ -13,9 +13,9 @@ Changed from base repository:
 * Based on [Experimental release](https://github.com/Denvi/Candle/tree/Experimental)
 * Adoption of a new version of Qt
 * Change CMakeLists.txt to generate DMG package (run "make appdmg")
-* Use GLES widget (QOpenGLWidget)
 * Disable plugins
 * Support Apple Silicon
+* Open G-Code from Finder
 
 Build requirements:
 ------------------
