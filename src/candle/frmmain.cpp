@@ -260,6 +260,10 @@ frmMain::frmMain(QWidget *parent) :
     m_senderErrorBox = new QMessageBox(QMessageBox::Warning, qApp->applicationDisplayName(), QString(),
                                        QMessageBox::Ignore | QMessageBox::Abort, this);
     m_senderErrorBox->setCheckBox(new QCheckBox(tr("Don't show again")));
+    // Event filter
+    // Since processEvent() is called from the loadSettings() function,
+    // the event filter must be installed before loadSettings().
+    qApp->installEventFilter(this);
 
     // Loading settings
     loadSettings();
@@ -361,9 +365,6 @@ frmMain::frmMain(QWidget *parent) :
     connect(&m_serialPort, SIGNAL(error(QSerialPort::SerialPortError)), this, SLOT(onSerialPortError(QSerialPort::SerialPortError)));
     connect(&m_timerConnection, SIGNAL(timeout()), this, SLOT(onTimerConnection()));
     connect(&m_timerStateQuery, SIGNAL(timeout()), this, SLOT(onTimerStateQuery()));
-
-    // Event filter
-    qApp->installEventFilter(this);
 
     // Start timers
     m_timerConnection.start(1000);
@@ -2991,6 +2992,14 @@ void frmMain::on_grpUserCommands_toggled(bool checked)
 
 bool frmMain::eventFilter(QObject *obj, QEvent *event)
 {
+#ifdef Q_OS_MACOS
+    if (event->type() == QEvent::FileOpen) {
+        QFileOpenEvent *openEvent = static_cast<QFileOpenEvent *>(event);
+        qDebug() << "Open file" << openEvent->file();
+        loadFile(openEvent->file());
+        return true;
+    }
+#endif
     if (obj->inherits("QWidgetWindow")) {
 
         QKeySequence ks;
